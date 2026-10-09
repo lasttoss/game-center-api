@@ -40,7 +40,7 @@ public class JwtUtils {
 
     public Claims extractAllClaims(String token) {
         try {
-            // Giải mã token và trả về các claims
+            // Decodes the token and returns the claims it carries.
             Claims claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody();
             return claims;
         } catch (Exception e) {
