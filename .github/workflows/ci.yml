@@ -102,3 +102,29 @@ jobs:
             grep -q "$claim" /tmp/render.yaml || { echo "the chart no longer has: $claim"; exit 1; }
           done
           echo "every claim is in the manifest"
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # The test the pom excludes needs these two; the pom's own comment says how to run it.
+    services:
+      mongo:
+        image: mongo:7
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: The integration test, with the stack it asks for
+        run: ./mvnw -B test -Dgroups=integration
