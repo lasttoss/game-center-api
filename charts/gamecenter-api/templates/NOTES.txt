@@ -1,0 +1,8 @@
+{{ .Chart.Name }} {{ .Chart.Version }} is installed as {{ .Release.Name }}.
+
+  kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+  helm test {{ .Release.Name }}
+
+The API reaches MongoDB and Redis by name ({{ .Values.config.redisHost }}), so both must be reachable in this
+namespace. The chart mounts no token, drops every capability, keeps the root filesystem read-only, and keeps one
+replica available through a disruption - which is what a rolling update on a live service needs.

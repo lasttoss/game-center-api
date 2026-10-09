@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "gamecenter-api.fullname" . }}-test-ready
+  labels:
+    {{- include "gamecenter-api.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  containers:
+    - name: check
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        # A TCP connect rather than an HTTP status: the chart can prove the Service answers, and the health
+        # of what sits behind it is what the probes are for.
+        - 'nc -z -w 5 {{ include "gamecenter-api.fullname" . }} {{ .Values.service.port }} && echo "the service answers on every replica"'
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL

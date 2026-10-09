@@ -1,0 +1,29 @@
+replicaCount: 2
+image:
+  repository: ghcr.io/lasttoss/game-center-api
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: 500m, memory: 512Mi}
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+networkPolicy:
+  enabled: true
+  datastorePorts:
+    - 27017
+    - 6379
+config:
+  mongoUri: mongodb://mongo:27017/gamecenter
+  redisHost: redis
+  redisPort: 6379

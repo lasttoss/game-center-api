@@ -1,0 +1,6 @@
+apiVersion: v2
+name: gamecenter-api
+description: The game centre API on Kubernetes - replicas that roll without dropping a request, a budget that keeps one serving, and a policy that lets the API reach only what it uses
+type: application
+version: 0.1.0
+appVersion: "1.0"

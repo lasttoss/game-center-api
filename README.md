@@ -115,3 +115,14 @@ instances that need it.
 
 `docs/diagrams/layered-request-path.mmd` is the Mermaid source; `make diagram` exports a PNG if a browser is
 present.
+
+## The chart
+
+`charts/gamecenter-api/` deploys the API with what a live service needs on Kubernetes: a rolling update that
+does not take a replica out of the Service (`maxUnavailable: 0`), a PodDisruptionBudget that keeps one serving
+through a disruption, an HPA, a NetworkPolicy whose egress names the datastores it uses instead of allowing
+everything, no service-account token, and a read-only root filesystem with an `emptyDir` for `/tmp`.
+
+```bash
+make chart     # helm lint --strict + helm template
+```
