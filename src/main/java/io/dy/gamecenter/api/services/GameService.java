@@ -44,7 +44,9 @@ public class GameService {
         GameModel item = gameRepository.findById(id);
         GameResponseData data = ModelMapperUtils.map(item, GameResponseData.class);
         response.setData(data);
-        response.setData(HttpStatus.OK.value());
+        // Was setData here: the answer to "give me this game" was the number 200 in the data field
+        // and a status of zero, so a client got no game at all.
+        response.setStatus(HttpStatus.OK.value());
         return response;
     }
 

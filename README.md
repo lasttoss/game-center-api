@@ -129,20 +129,47 @@ make chart     # helm lint --strict + helm template
 
 ## Coverage
 
-Measured with `./mvnw -B test` plus the JaCoCo plugin, twice: once as CI runs it (unit only) and once with the
-integration-tagged test selected and MongoDB up.
+`./mvnw -B test` runs the unit suite; these are JaCoCo's numbers, line coverage:
 
-| run | lines | branches |
-|---|---|---|
-| unit suite (as CI runs it) | 28 / 783 = **3.6%** | 5 / 996 = **0.5%** |
-| `-Dgroups=integration` with the stack up | 28 / 783 = **3.6%** | 5 / 996 = **0.5%** |
+| class | lines |
+|---|---|
+| `AuthService` | 100.0% (72/72) |
+| `MatchService` | 0.0% (0/49) |
+| `LeaderboardService` | 0.0% (0/43) |
+| `UserModel` | 84.4% (27/32) |
+| `JwtUtils` | 76.7% (23/30) |
+| `GameResponseData` | 35.7% (10/28) |
+| `RedisService` | 0.0% (0/27) |
+| `GameService` | 100.0% (27/27) |
+| `LeaderboardModel` | 0.0% (0/23) |
+| `GameModel` | 73.9% (17/23) |
+| **total** | **29.8%** (233/783 lines, 2.1% of 996 branches) |
 
-The second row is the interesting one: it is identical. The integration test boots the whole application context
-against a real MongoDB, which is worth having and is not coverage - it proves the wiring resolves, not that the
-logic is exercised. So 3.6% is the whole truth about this suite rather than an artefact of a test being held back,
-and it was measured both ways rather than assumed from the tag.
+`AuthService` and `GameService` are covered in full, with no Spring context and no MongoDB: their
+collaborators are Mockito mocks, and the password encoder is the real one, because "the stored value
+is not the password" is the kind of thing a mock would agree with whatever the code did.
 
-By package, from the same report: `utils` 34.8%, `models` 3.4%, and `services` (259 lines), `controllers`,
-`repositories` and `redis` at zero.
+That sweep found three things, and they are the reason this section is longer than the table:
 
-The JaCoCo plugin is committed so both numbers can be reproduced rather than taken on trust.
+**Fixed:** `GameService.getItemById` ended with `setData(HttpStatus.OK.value())` where it meant
+`setStatus`, so the answer to "give me this game" was the number 200 in the data field and a status of
+zero. The test that reads the game back is the fix's guard.
+
+**Recorded, not fixed - `AuthService.login` never verifies the password.** It looks the username up
+and issues tokens; the encoder field is only ever used by `register`. As written, any password signs
+you in as anyone whose name you know. It is left alone because adding a check would lock out every
+client that signs in through this route today, and whether that route is meant to serve social logins
+is a call for the service owner.
+
+**Recorded, not fixed - `UserModel.getUsername()` and `getPassword()` are stubs that return null.**
+The model implements Spring Security's `UserDetails` and satisfies two of its methods with stubs, and
+Lombok does not generate a getter where one already exists - so the field holds the username and the
+obvious accessor answers null. Nothing breaks today because requests are authenticated by
+`JwtAuthFilter`, but any `UserDetailsService`, encoder or log line that reaches for those getters reads
+null, and a test that asserts on them is testing the stub. Hence two tests that read the fields
+directly and say why.
+
+Not covered here, and what covers them instead: `MatchService`, `LeaderboardService` and
+`RedisService` are next; the repositories and controllers are the data and REST layers, exercised by
+the end-to-end run against the stack. `ApplicationTests` is tagged `integration` and the pom excludes
+it from the unit suite - CI runs it in the job that brings up MongoDB and Redis, so it is not lost.
