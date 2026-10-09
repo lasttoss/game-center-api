@@ -126,3 +126,19 @@ everything, no service-account token, and a read-only root filesystem with an `e
 ```bash
 make chart     # helm lint --strict + helm template
 ```
+
+## Coverage
+
+Measured with `./mvnw -B test` plus the JaCoCo plugin (line and branch):
+
+| | covered / total | |
+|---|---|---|
+| lines | 28 / 783 | **3.6%** |
+| branches | 5 / 996 | **0.5%** |
+
+By package: `utils` 34.8%, `models` 3.4%, and `services` (259 lines), `controllers`, `repositories` and `redis` at
+zero. The reason is the same as in the other services here: the tests that exercise those layers need the MongoDB
+and Redis of `docker-compose.yml` and carry the `integration` tag, so CI runs the unit suite only - the workflow
+says so in a comment. What CI proves is that the project builds and that its unit suite passes.
+
+The JaCoCo plugin is committed so the number can be reproduced rather than taken on trust.
