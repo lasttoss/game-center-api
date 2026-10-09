@@ -134,22 +134,32 @@ make chart     # helm lint --strict + helm template
 | class | lines |
 |---|---|
 | `AuthService` | 100.0% (72/72) |
-| `MatchService` | 0.0% (0/49) |
-| `LeaderboardService` | 0.0% (0/43) |
+| `MatchService` | 100.0% (49/49) |
+| `LeaderboardService` | 100.0% (43/43) |
 | `UserModel` | 84.4% (27/32) |
 | `JwtUtils` | 76.7% (23/30) |
 | `GameResponseData` | 35.7% (10/28) |
 | `RedisService` | 0.0% (0/27) |
 | `GameService` | 100.0% (27/27) |
-| `LeaderboardModel` | 0.0% (0/23) |
-| `GameModel` | 73.9% (17/23) |
-| **total** | **29.8%** (233/783 lines, 2.1% of 996 branches) |
+| `LeaderboardModel` | 78.3% (18/23) |
+| `GameModel` | 78.3% (18/23) |
+| `MatchModel` | 91.3% (21/23) |
+| `JwtAuthFilter` | 0.0% (0/19) |
+| **total** | **51.6%** (404/783 lines, 4.8% of 996 branches) |
 
-`AuthService` and `GameService` are covered in full, with no Spring context and no MongoDB: their
-collaborators are Mockito mocks, and the password encoder is the real one, because "the stored value
-is not the password" is the kind of thing a mock would agree with whatever the code did.
+The four services are covered in full, with no Spring context and no MongoDB: their collaborators are
+Mockito mocks, and the password encoder is the real one, because "the stored value is not the
+password" is the kind of thing a mock would agree with whatever the code did.
 
-That sweep found three things, and they are the reason this section is longer than the table:
+The tests are about the decisions rather than the lines. `AuthService`: which status and which error
+code each way of failing produces, what was written to the database, and how long the tokens last.
+`GameService`: the page size and offset the caller asked for, the total the database reports, and the
+order the items come back in. `MatchService`: who is allowed to write to a match - the game key, the
+owner, and a match that is already finished - and that a score reaches the leaderboard as well as the
+match. `LeaderboardService`: that a score is written to all three periods, and that a player's
+metadata is fetched once and cached rather than looked up per entry.
+
+Three things came out of the sweep, and they are why this section is longer than the table:
 
 **Fixed:** `GameService.getItemById` ended with `setData(HttpStatus.OK.value())` where it meant
 `setStatus`, so the answer to "give me this game" was the number 200 in the data field and a status of
@@ -169,7 +179,8 @@ obvious accessor answers null. Nothing breaks today because requests are authent
 null, and a test that asserts on them is testing the stub. Hence two tests that read the fields
 directly and say why.
 
-Not covered here, and what covers them instead: `MatchService`, `LeaderboardService` and
-`RedisService` are next; the repositories and controllers are the data and REST layers, exercised by
-the end-to-end run against the stack. `ApplicationTests` is tagged `integration` and the pom excludes
-it from the unit suite - CI runs it in the job that brings up MongoDB and Redis, so it is not lost.
+Not covered, and what covers it instead: `RedisService` is a thin wrapper over `RedisTemplate` and
+testing it properly means a real Redis; the repositories and the controllers are the data and REST
+layers, exercised by the end-to-end run against the stack. `ApplicationTests` is tagged `integration`
+and the pom excludes it from the unit suite - CI runs it in the job that brings up MongoDB and Redis,
+so it is not lost.
