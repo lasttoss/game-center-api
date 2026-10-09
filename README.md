@@ -129,16 +129,20 @@ make chart     # helm lint --strict + helm template
 
 ## Coverage
 
-Measured with `./mvnw -B test` plus the JaCoCo plugin (line and branch):
+Measured with `./mvnw -B test` plus the JaCoCo plugin, twice: once as CI runs it (unit only) and once with the
+integration-tagged test selected and MongoDB up.
 
-| | covered / total | |
+| run | lines | branches |
 |---|---|---|
-| lines | 28 / 783 | **3.6%** |
-| branches | 5 / 996 | **0.5%** |
+| unit suite (as CI runs it) | 28 / 783 = **3.6%** | 5 / 996 = **0.5%** |
+| `-Dgroups=integration` with the stack up | 28 / 783 = **3.6%** | 5 / 996 = **0.5%** |
 
-By package: `utils` 34.8%, `models` 3.4%, and `services` (259 lines), `controllers`, `repositories` and `redis` at
-zero. The reason is the same as in the other services here: the tests that exercise those layers need the MongoDB
-and Redis of `docker-compose.yml` and carry the `integration` tag, so CI runs the unit suite only - the workflow
-says so in a comment. What CI proves is that the project builds and that its unit suite passes.
+The second row is the interesting one: it is identical. The integration test boots the whole application context
+against a real MongoDB, which is worth having and is not coverage - it proves the wiring resolves, not that the
+logic is exercised. So 3.6% is the whole truth about this suite rather than an artefact of a test being held back,
+and it was measured both ways rather than assumed from the tag.
 
-The JaCoCo plugin is committed so the number can be reproduced rather than taken on trust.
+By package, from the same report: `utils` 34.8%, `models` 3.4%, and `services` (259 lines), `controllers`,
+`repositories` and `redis` at zero.
+
+The JaCoCo plugin is committed so both numbers can be reproduced rather than taken on trust.
