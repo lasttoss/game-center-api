@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -17,7 +18,9 @@ jobs:
           cache: maven
       - name: Build
         run: ./mvnw -B -DskipTests package
-      - name: Tests
+      - name: Unit tests
+        # The tests tagged "integration" need the MongoDB and Redis of docker-compose.yml, so they
+        # do not run here; see ApplicationTests.
         run: ./mvnw -B test
       - name: Image builds
         run: docker build -t gamecenter-api:ci .

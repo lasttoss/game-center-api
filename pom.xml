@@ -193,6 +193,16 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Unit tests run anywhere. The test tagged "integration" boots the whole
+                 application and therefore needs the MongoDB and Redis from docker-compose.yml,
+                 so it is excluded here and run with -Dgroups=integration once that stack is up. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>integration</excludedGroups>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

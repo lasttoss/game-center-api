@@ -68,7 +68,12 @@ public class JwtUtils {
     }
 
     public Boolean validateToken(String token) {
-        return !isTokenExpired(token);
+        // A token that cannot be parsed is not a valid token. extractExpiration returns null for
+        // those - extractAllClaims swallows the parse error - and calling before() on that null
+        // used to throw a NullPointerException, turning a client presenting a garbage token into a
+        // 500 instead of a 401.
+        Date expiresAt = extractExpiration(token);
+        return expiresAt != null && expiresAt.after(new Date());
     }
 
     private String[] getAuthorities(Collection<? extends GrantedAuthority> authorities) {
