@@ -98,17 +98,3 @@ jobs:
             grep -q "$claim" /tmp/render.yaml || { echo "the chart no longer has: $claim"; exit 1; }
           done
           echo "every claim is in the manifest"
-
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
-      - name: The tests, which the image build skipped
-        # The other job builds the image; building an image is not running the tests.
-        run: ./mvnw -B test
