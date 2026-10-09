@@ -1,0 +1,13 @@
+%% Source for docs/diagrams/layered-request-path.html
+%% One request through a layered Spring service, and the two datastores that do different jobs.
+flowchart LR
+  C["game client"] -->|"Authorization: Bearer"| J["JwtAuthFilter<br/>stateless"]
+  J --> CT["controllers<br/>thin, HTTP only"]
+  CT --> S["services"]
+  S --> R["repositories<br/>Spring Data Mongo"]
+  R --> M[("MongoDB<br/>catalogue · leaderboards<br/>player data")]
+  S <--> RD[("Redis<br/>caches + pub/sub")]
+  CT -.->|"dto + mappers"| E["document shape<br/>never leaves"]
+  CT -.->|"ApiErrorEnum + Response"| ER["one error shape<br/>for every endpoint"]
+  classDef gate fill:#eef5ef,stroke:#1a6b3c,stroke-width:2px;
+  class J gate;

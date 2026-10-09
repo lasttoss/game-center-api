@@ -84,3 +84,34 @@ Ports taken? Copy `.env.example` to `.env` and change `API_PORT` / `MONGO_PORT` 
 ## License
 
 MIT - see [LICENSE](LICENSE).
+
+## The request path as a picture
+
+```mermaid
+%% Source for docs/diagrams/layered-request-path.html
+%% One request through a layered Spring service, and the two datastores that do different jobs.
+flowchart LR
+  C["game client"] -->|"Authorization: Bearer"| J["JwtAuthFilter<br/>stateless"]
+  J --> CT["controllers<br/>thin, HTTP only"]
+  CT --> S["services"]
+  S --> R["repositories<br/>Spring Data Mongo"]
+  R --> M[("MongoDB<br/>catalogue · leaderboards<br/>player data")]
+  S <--> RD[("Redis<br/>caches + pub/sub")]
+  CT -.->|"dto + mappers"| E["document shape<br/>never leaves"]
+  CT -.->|"ApiErrorEnum + Response"| ER["one error shape<br/>for every endpoint"]
+  classDef gate fill:#eef5ef,stroke:#1a6b3c,stroke-width:2px;
+  class J gate;
+```
+
+One request, drawn so the layer boundaries are visible: the filter checks a stateless token, the controller
+stays on transport, the service holds the decisions, and the repository is the only thing that knows Mongo.
+Alongside them are the two cross-cutting pieces the README calls out — `dto`/`mappers`, so the stored
+document shape never reaches the client, and `ApiErrorEnum` with one response envelope, so every endpoint
+fails in the same shape.
+
+The two datastores are drawn with the jobs they actually have: Mongo holds what has to survive a restart and
+be queried by shape, Redis holds what is safe to lose — caches and the pub/sub that carries a change to the
+instances that need it.
+
+`docs/diagrams/layered-request-path.mmd` is the Mermaid source; `make diagram` exports a PNG if a browser is
+present.

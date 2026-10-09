@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>One request, and the two datastores that do different jobs</title>
+<style>
+  :root { --ink:#151412; --paper:#f7f4ee; --rule:#cfc7b8; --red:#b3261e; --green:#1a6b3c; --amber:#8a5a00; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font:16px/1.5 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
+  .sheet { max-width:1080px; margin:0 auto; padding:56px 40px 72px; }
+  .kicker { font:600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:.14em;
+            text-transform:uppercase; color:var(--amber); }
+  h1 { font-size:38px; line-height:1.15; margin:.35em 0 .2em; letter-spacing:-.01em; }
+  .dek { font-size:19px; color:#463f36; max-width:76ch; margin:0 0 8px; }
+  .meta { font:12px/1.6 ui-monospace, Menlo, monospace; color:#6b6357; border-top:1px solid var(--rule);
+          padding-top:10px; margin-top:22px; }
+  svg { display:block; width:100%; height:auto; margin:34px 0 0; }
+  .pairs { display:grid; grid-template-columns:1fr 1fr 1fr; gap:22px; margin-top:34px; }
+  .card { border-left:4px solid var(--ink); padding:14px 0 14px 18px; background:#fffdf8; }
+  .card b { display:block; font-size:12px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px; }
+  .card p { margin:0; font-size:16px; } .card p + p { margin-top:7px; }
+  footer { margin-top:38px; font:12px/1.7 ui-monospace, Menlo, monospace; color:#6b6357;
+           border-top:1px solid var(--rule); padding-top:12px; }
+  text { font-family:"Iowan Old Style", Palatino, Georgia, serif; }
+  .mono { font-family:ui-monospace, Menlo, monospace; }
+</style>
+<div class="sheet">
+  <div class="kicker">Architecture · game-center-api</div>
+  <h1>One request, and the two datastores that do different jobs</h1>
+  <p class="dek">A layered Spring service where each layer has one job: the controller speaks HTTP and
+    nothing else, the service decides, the repository talks to Mongo — and the document shape never reaches
+    the client because a mapper stands between them.</p>
+  <div class="meta">Spring Boot · MongoDB for the catalogue, leaderboards and player data · Redis for caches
+    and pub/sub · stateless JWT · one error envelope for every endpoint</div>
+
+  <svg viewBox="0 0 1040 500" role="img" aria-label="A request passes a JWT filter, a thin controller, a service and a repository into MongoDB, with Redis alongside and mappers and one error envelope as cross-cutting concerns">
+    <defs>
+      <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#151412"/></marker>
+      <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#1a6b3c"/></marker>
+      <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#8a5a00"/></marker>
+    </defs>
+
+    <rect x="20" y="44" width="176" height="100" rx="4" fill="#fffdf8" stroke="#151412"/>
+    <text x="34" y="68" font-size="14" font-weight="600">game client</text>
+    <text x="34" y="90" font-size="11" class="mono">/api/v1/…</text>
+    <text x="34" y="108" font-size="11" class="mono">Bearer token</text>
+    <text x="34" y="130" font-size="11" fill="#6b6357">catalogue, boards,</text>
+    <text x="34" y="136" font-size="11" fill="#6b6357"> </text>
+
+    <rect x="220" y="44" width="176" height="100" rx="4" fill="#eef5ef" stroke="#1a6b3c" stroke-width="2"/>
+    <text x="234" y="68" font-size="14" font-weight="600" fill="#1a6b3c">JwtAuthFilter</text>
+    <text x="234" y="90" font-size="11" class="mono">stateless: no session</text>
+    <text x="234" y="108" font-size="11" class="mono">to lose, so an</text>
+    <text x="234" y="126" font-size="11" class="mono">instance is replaceable</text>
+
+    <rect x="420" y="44" width="176" height="100" rx="4" fill="#fffdf8" stroke="#151412"/>
+    <text x="434" y="68" font-size="14" font-weight="600">controllers</text>
+    <text x="434" y="90" font-size="11" class="mono">thin: HTTP only</text>
+    <text x="434" y="108" font-size="11" class="mono">no business rules</text>
+    <text x="434" y="126" font-size="11" fill="#6b6357">paging + HATEOAS</text>
+
+    <rect x="620" y="44" width="176" height="100" rx="4" fill="#fffdf8" stroke="#151412"/>
+    <text x="634" y="68" font-size="14" font-weight="600">services</text>
+    <text x="634" y="90" font-size="11" class="mono">the decisions</text>
+    <text x="634" y="108" font-size="11" class="mono">live here</text>
+    <text x="634" y="126" font-size="11" fill="#6b6357">the only layer that</text>
+    <text x="634" y="142" font-size="11" fill="#6b6357">knows both sides</text>
+
+    <rect x="820" y="44" width="176" height="100" rx="4" fill="#fffdf8" stroke="#151412"/>
+    <text x="834" y="68" font-size="14" font-weight="600">repositories</text>
+    <text x="834" y="90" font-size="11" class="mono">Spring Data Mongo</text>
+    <text x="834" y="108" font-size="11" class="mono">one @Configuration</text>
+    <text x="834" y="126" font-size="11" class="mono">per datastore</text>
+
+    <path d="M196 94 L220 94" stroke="#151412" stroke-width="2" marker-end="url(#a)"/>
+    <path d="M396 94 L420 94" stroke="#151412" stroke-width="2" marker-end="url(#a)"/>
+    <path d="M596 94 L620 94" stroke="#151412" stroke-width="2" marker-end="url(#a)"/>
+    <path d="M796 94 L820 94" stroke="#151412" stroke-width="2" marker-end="url(#a)"/>
+
+    <!-- the two datastores -->
+    <rect x="620" y="182" width="176" height="96" rx="4" fill="#fffdf8" stroke="#8a5a00" stroke-width="2"/>
+    <text x="634" y="206" font-size="13" font-weight="600" fill="#8a5a00">Redis</text>
+    <text x="634" y="228" font-size="11" class="mono">caches</text>
+    <text x="634" y="246" font-size="11" class="mono">pub/sub plumbing</text>
+    <text x="634" y="266" font-size="11" fill="#6b6357">fast, and lost on restart</text>
+
+    <rect x="820" y="182" width="176" height="96" rx="4" fill="#fffdf8" stroke="#151412" stroke-width="2"/>
+    <text x="834" y="206" font-size="13" font-weight="600">MongoDB</text>
+    <text x="834" y="228" font-size="11" class="mono">catalogue, categories</text>
+    <text x="834" y="246" font-size="11" class="mono">leaderboards</text>
+    <text x="834" y="266" font-size="11" class="mono">player data</text>
+
+    <path d="M880 144 L880 182" stroke="#151412" stroke-width="2" marker-end="url(#a)"/>
+    <path d="M708 144 L708 182" stroke="#8a5a00" stroke-width="2" marker-end="url(#ao)"/>
+    <path d="M708 182 L708 160" stroke="#8a5a00" stroke-width="2" marker-end="url(#ao)"/>
+    <text x="716" y="176" font-size="10" class="mono" fill="#8a5a00">both ways</text>
+
+    <!-- cross-cutting -->
+    <rect x="20" y="182" width="270" height="96" rx="4" fill="#eef5ef" stroke="#1a6b3c" stroke-dasharray="5 4"/>
+    <text x="34" y="206" font-size="13" font-weight="600" fill="#1a6b3c">dto + mappers</text>
+    <text x="34" y="228" font-size="11" class="mono">the stored document shape</text>
+    <text x="34" y="246" font-size="11" class="mono">never reaches the client:</text>
+    <text x="34" y="266" font-size="11" class="mono">a schema can change alone</text>
+
+    <rect x="310" y="182" width="290" height="96" rx="4" fill="#eef5ef" stroke="#1a6b3c" stroke-dasharray="5 4"/>
+    <text x="324" y="206" font-size="13" font-weight="600" fill="#1a6b3c">ApiErrorEnum + Response</text>
+    <text x="324" y="228" font-size="11" class="mono">one envelope, so every endpoint</text>
+    <text x="324" y="246" font-size="11" class="mono">fails in the same shape and a</text>
+    <text x="324" y="266" font-size="11" class="mono">client parses one thing</text>
+
+    <path d="M508 144 L470 182" stroke="#1a6b3c" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ag)"/>
+    <path d="M300 144 L180 182" stroke="#1a6b3c" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ag)"/>
+
+    <rect x="20" y="306" width="1000" height="76" rx="4" fill="#fffdf8" stroke="#cfc7b8"/>
+    <text x="36" y="330" font-size="12" class="mono" fill="#6b6357">WHY TWO DATASTORES, AND WHY THAT IS NOT DUAL-WRITING A MISTAKE</text>
+    <text x="36" y="354" font-size="13">They hold different things: Mongo holds what must survive a restart and be queried by shape; Redis holds</text>
+    <text x="36" y="374" font-size="13">what is safe to lose — caches and the pub/sub that carries a change to the instances that need it.</text>
+
+    <rect x="20" y="400" width="1000" height="76" rx="4" fill="#fffdf8" stroke="#151412"/>
+    <text x="36" y="424" font-size="12" class="mono" fill="#6b6357">HOW IT RUNS</text>
+    <text x="36" y="448" font-size="13">Dockerfile: a Maven build stage into a Temurin runtime, so the container carries a JRE and a jar, not a</text>
+    <text x="36" y="468" font-size="13">toolchain. Compose starts mongo + redis + the api with health-gated order: the api waits for both.</text>
+  </svg>
+
+  <div class="pairs">
+    <div class="card">
+      <b>Why the controller stays thin</b>
+      <p>A controller that decides is a rule that cannot be tested without HTTP and cannot be reused by a
+        scheduled job. Keeping it to transport is what makes the service layer testable on its own.</p>
+    </div>
+    <div class="card">
+      <b>Why stateless auth matters here</b>
+      <p>No session to lose means an instance can be replaced or scaled out at any moment, which is the
+        property the container setup depends on. A token that has to be renewed is a client concern.</p>
+    </div>
+    <div class="card">
+      <b>Errors as data, not as prose</b>
+      <p>One envelope and one enum mean a client parses one shape, and an operator can group failures by
+        code. A service whose every endpoint invents its own error body is a service whose errors are read
+        one at a time.</p>
+    </div>
+  </div>
+
+  <footer>
+    Sources: docs/diagrams/layered-request-path.mmd for the Mermaid version; the README's "What this
+    demonstrates" list and endpoint table for the layers, the datastores and the error handling; src/main/java
+    for the packages named here. `make diagram` exports a PNG if a browser is present.
+  </footer>
+</div>
