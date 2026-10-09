@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 COMPOSE ?= docker compose
 
-.PHONY: help up down logs build run test clean diagram chart
+.PHONY: help up down logs build run test clean diagram chart guard
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-8s\033[0m %s\n", $$1, $$2}'
@@ -37,6 +37,13 @@ diagram:
 
 # The chart is part of the repository, so it gets the same gate as the code.
 chart:
-	helm lint charts/gamecenter-api --strict
-	helm template dev charts/gamecenter-api > /dev/null
+	helm lint charts/gamecenter-api --strict --set secret.allowMissing=true
+	helm template dev charts/gamecenter-api --set secret.allowMissing=true > /dev/null
 	@echo "the chart lints and renders"
+
+# The guard is a feature, so it gets a test.
+guard:
+	@if helm template dev charts/gamecenter-api > /dev/null 2>&1; then \
+		echo "the chart rendered with no credentials: the guard is broken"; exit 1; \
+	fi
+	@echo "the chart refuses to render without credentials"
