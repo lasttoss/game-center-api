@@ -33,4 +33,4 @@ build/
 /src/main/webapp/
 /env/
 /.env
-/docker-compose.yml
+/docker-compose.yml.env
