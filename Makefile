@@ -8,8 +8,8 @@ help: ## Show this help
 
 up: ## Start mongo + redis + the api
 	$(COMPOSE) up -d --build
-	@echo "api      : http://localhost:$${API_PORT:-8080}/api/v1"
-	@echo "swagger  : http://localhost:$${API_PORT:-8080}/swagger-ui.html"
+	@echo "api      : http://localhost:$${API_PORT:-18110}/api/v1"
+	@echo "swagger  : http://localhost:$${API_PORT:-18110}/swagger-ui.html"
 
 down: ## Stop the stack
 	$(COMPOSE) down
