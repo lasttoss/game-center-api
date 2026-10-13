@@ -77,8 +77,7 @@ Ports taken? Copy `.env.example` to `.env` and change `API_PORT` / `MONGO_PORT` 
 
 ## Notes / limitations
 
-- There are no automated tests yet; the CI job builds, runs `mvn test` (currently empty) and
-  builds the image.
+- 36 unit tests, 51.6% of lines (the table below); the CI job runs `mvn test` and builds the image.
 - `quarkus-*`-style native compilation is not set up here: this is a plain JVM service.
 
 ## License
