@@ -128,3 +128,18 @@ jobs:
           cache: maven
       - name: The integration test, with the stack it asks for
         run: ./mvnw -B test -Dgroups=integration
+
+  diagrams:
+    # A broken Mermaid diagram does not fail anything: GitHub renders an "Unable to render rich
+    # display" box and only a human reader notices. This job parses every diagram instead.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tools/mermaid-check/package-lock.json
+      - name: Every Mermaid diagram must parse
+        run: cd tools/mermaid-check && npm ci --silent --no-audit --no-fund && node check.mjs

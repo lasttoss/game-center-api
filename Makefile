@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 COMPOSE ?= docker compose
 
-.PHONY: help up down logs build run test clean diagram chart guard
+.PHONY: diagrams-check  help up down logs build run test clean diagram chart guard
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-8s\033[0m %s\n", $$1, $$2}'
@@ -47,3 +47,7 @@ guard:
 		echo "the chart rendered with no credentials: the guard is broken"; exit 1; \
 	fi
 	@echo "the chart refuses to render without credentials"
+
+diagrams-check: ## Parse every Mermaid diagram (a broken one only shows up as an error box on GitHub)
+	@cd tools/mermaid-check && npm ci --silent --no-audit --no-fund && node check.mjs
+
